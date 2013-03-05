@@ -3,13 +3,13 @@
 
 #library(MASS)
 library(arm)
-#library(car)
+library(car)
 
-#library(ggplot2)
-#theme_set(theme_bw())
+library(ggplot2)
+theme_set(theme_bw())
 
 # Load up datasets
-crimedata <- read.csv("crimedata.csv", header = TRUE)#, row.names = 8)
+crimedata <- read.csv("crimedata.csv", header = TRUE, row.names = 1)
 inspol <- read.csv("inspol.trunc.csv", header = TRUE)
 
 # Run all relevant data manipulation (From Term 1 Coursework)
@@ -37,7 +37,7 @@ head(crimedata)
 During the fitting of the model, I have considered the real-life relationships between variables to try and fit a model which will best fit the actual data I have. For example, we could hypothesise that in metropolitan areas, there is a higher crime rate, as more people live close proximity. Also, the metropolitan population could influence the total population, as we could postulate that if there is a high number of cities in a state, there is a higher population in that state.
 
 I started off modelling applying a fairly full model, with all the variables in:
-$$Y_i = \beta_1 + \beta_2x_{2i} + \beta_3x_{3i} + \beta_4x_{4i} + \beta_5x_{5i} + \beta_6x_{6i} + \beta_7x_{7i}$$
+$$Y_i = \beta_1 + \beta_2x_{2i} + \beta_3x_{3i} + \beta_4x_{4i} + \beta_5x_{5i} + \beta_6x_{6i} + \beta_7x_{7i} + \epsilon_i$$
 
 where: 
 * $x_{2i}$ is the population for the $i^{th}$ state,
@@ -45,19 +45,56 @@ where:
 * $x_{4i}$ is the metropolitan population for the $i^{th}$ state,
 * $x_{5i}$ is the poverty level for the $i*^{th}$ state,* $x_{2i}$ is the population for the $i^{th}$ state,
 * $x_{6i}$ is the education level for the $i*^{th}$ state,
-* and $x_{7i}$ is the log of spending on the department of corrections for the $i^{th}$ state.
+* $x_{7i}$ is the log of spending on the department of corrections for the $i^{th}$ state,
+* and $\epsilon_i$ is the unobservable error for the $i^{th}$ state.
 
-I checked the model fit using the adjusted $R^2$ statistic. I also looked at the coefplot (Fig. 1), which plots each coefficient and it's standard error (as well as twice the standard error). This is also our 95% Confidence Interval for each coefficient. This allows us to remove coefficients from the model which don't appear to have an effect on the crime rate.
+I checked the model fit using the adjusted $R^2$ statistic. I also looked at the coefplot (Fig. 1.1), which plots each coefficient and it's standard error (as well as twice the standard error). This is also our 95% Confidence Interval for each coefficient. This allows us to remove coefficients from the model which don't appear to have an effect on the crime rate.
 
 ```{r echo=FALSE}
-crimedata.lm.full <- lm(Crime ~ popn + metro + popdens + pov + education + spending, data = crimedata)
-coefplot(crimedata.lm.full, col.pts = "red", main = "Fig. 1 - Regression Coefficient Estimates and C.I.\'s")
+crimedata.lm1 <- lm(Crime ~ popn + metro + popdens + pov + education + spending, data = crimedata)
+coefplot(crimedata.lm1, col.pts = "red", main = "Fig. 1.1 - Regression Coefficient Estimates and C.I.\'s")
 ```
 
-We can view the $R^2$ statistic using display()
+We can view the adjusted $R^2$ statistic using summary()
 ```{r}
-display(crimedata.lm.full)
+summary(crimedata.lm1)
 ```
+
+The adjusted $R^2$ for this model is `r summary(crimedata.lm1)$adj.r.squared`. The adjusted $R^2$ is a penalised $R^2$ statistic to take into account the number of variables in the model. The $R^2$ statistic is calculated from $$R^2 = \frac{SS_{Model}}{SS_{Total}} \times 100$$
+The adjusted $R^2$ takes into account the model terms and is calculated $$Adjusted\hspace{2pt}R^2 = 1-\frac{\hat{\sigma^2}_{Model}}{\hat{\sigma^2}_{Null}}$$
+We can use the $R^2$ to compare this model with other models using the same data. We can also use something called the AIC (Akaike's Information Criteron) to compare this model with other models. The AIC is calculated $AIC = -2log(L(\hat{\theta})) + 2p$ ($AIC = nlog(\hat{\theta^2}) + 2p$ for least squares problems.) For this model, the AIC is `r AIC(crimedata.lm1)`.
+
+When we look at the coefplot for this model, we see that there are a few coefficients which sit on zero, or the confidence intervals cover zero, i.e. the popn (population) variable. We might want to remove this to see if it improves the model fit, and have the model:
+
+$$Y_i = \beta_1 + \beta_2x_{metro,i} + \beta_3x_{popdens,i} + \beta_4x_{pov,i} + \beta_5x_{education,i} + \beta_6x_{spending,i} + \epsilon_i$$
+
+```{r echo = FALSE}
+crimedata.lm2 <- lm(Crime ~ metro + popdens + pov + education + spending, data = crimedata)
+```
+where $Y_i$ is the crime rate for the $i^{th}$ state, and $x_{popdens,i}$ denotes the population density for the $i^{th}$ state (similarly for the other variables/x values). When we look at the coefplot for this model (Fig 1.2) we see that the spending now covers zero. This could suggest we also need to remove the spending variable. For this model, the adjusted $R^2$ is `r summary(crimedata.lm2)$adj.r.squared` and the AIC value is `r AIC(crimedata.lm2)`. Compared to the first model, the $R^2$ is lower, and the AIC is higher. At this point, we need to make a judgemental decision whether we are using the $R^2$ or AIC. In this case, I'm using the AIC, as the adjusted $R^2$ can become biased if we 'trawl' for the lowest value.
+
+```{r echo = FALSE}
+coefplot(crimedata.lm2, col.pts = "red", main = "Fig. 1.2 - Regression Coefficient Estimates and C.I.\'s")
+```
+
+I've also tried removing the spending variable, to see if it affects the model fit. The coefplot (Fig 1.3) shows that now none of the variables cover zero. However, the AIC for this model is also higher, suggesting that the original model still describes the dataset best. Hence, I am using the model
+
+$$Y_i = \beta_1 + \beta_2x_{popn,i} + \beta_3x_{metro,i} + \beta_4x_{popdens,i} + \beta_5x_{pov,i} + \beta_6x_{education,i} + \beta_7x_{spending,i} + \epsilon_i$$
+
+I have looked at including interaction terms, smooth terms or power terms, but trying these terms increases the AIC and makes the model more difficult to interpret properly.
+
+```{r echo = FALSE}
+crimedata.lm3 <- lm(Crime ~ metro + popdens + pov + education, data = crimedata)
+coefplot(crimedata.lm3, col.pts = "red", main = "Fig. 1.3 - Regression Coefficient Estimates and C.I.\'s")
+```
+
+Looking at the model we have fitted, we see some interesting results, interpreted in more detail later on in this report. We first want to check that the assumptions used in fitting this model are correct. In fitting the model, we have assumed that the errors are 
+
+
+```{r echo = FALSE}
+plot(crimedata.lm2, which = 2, main = "Fig 1.4 - Normal Q-Q Plot of Residuals")
+```
+
 ***
 Discrete Dataset (inspol)
 -
