@@ -1,0 +1,63 @@
+```{r echo = FALSE, message = FALSE}
+# Load all required libraries
+
+#library(MASS)
+library(arm)
+#library(car)
+
+#library(ggplot2)
+#theme_set(theme_bw())
+
+# Load up datasets
+crimedata <- read.csv("crimedata.csv", header = TRUE)#, row.names = 8)
+inspol <- read.csv("inspol.trunc.csv", header = TRUE)
+
+# Run all relevant data manipulation (From Term 1 Coursework)
+crimedata$education <- crimedata$education * 100
+crimedata$education <- crimedata$education/crimedata$popn * 100
+crimedata$spending <- log(crimedata$spending)
+crimedata$popdens <- log(crimedata$popdens)
+crimedata$popdens <- crimedata$popdens - mean(crimedata$popdens)
+
+```
+STAT2402 Regression Modelling: Term 2 Coursework
+=
+Edward Strang
+-
+***
+
+Continous Dataset (crimedata)
+-
+The continuous dataset used was the #crimedata# dataset, an abstract of the 1993 US census. There are 51 observations (states) of 7 variables, covering population, population density, metropolitan population, education levels and spending on crime, as well as crime rates. Whilst modelling, I have looked at the relationship between crime rates and the other variables, and tried to see if there is a discernable link between them and crime rates. This analysis could be used to help bring crime rates down. Another application could be to try and predict crime rates in another similar country, but this could be interpolating outside the range of the data, and produce incorrect conclusions. Below is an abstract of the first few lines of the dataset.
+
+```{r echo=FALSE, comment=NA}
+head(crimedata)
+```
+
+During the fitting of the model, I have considered the real-life relationships between variables to try and fit a model which will best fit the actual data I have. For example, we could hypothesise that in metropolitan areas, there is a higher crime rate, as more people live close proximity. Also, the metropolitan population could influence the total population, as we could postulate that if there is a high number of cities in a state, there is a higher population in that state.
+
+I started off modelling applying a fairly full model, with all the variables in:
+$$Y_i = \beta_1 + \beta_2x_{2i} + \beta_3x_{3i} + \beta_4x_{4i} + \beta_5x_{5i} + \beta_6x_{6i} + \beta_7x_{7i}$$
+
+where: 
+* $x_{2i}$ is the population for the $i^{th}$ state,
+* $x_{3i}$ is the log of the population density (mean centered) for the $i*^{th}$ state,
+* $x_{4i}$ is the metropolitan population for the $i^{th}$ state,
+* $x_{5i}$ is the poverty level for the $i*^{th}$ state,* $x_{2i}$ is the population for the $i^{th}$ state,
+* $x_{6i}$ is the education level for the $i*^{th}$ state,
+* and $x_{7i}$ is the log of spending on the department of corrections for the $i^{th}$ state.
+
+I checked the model fit using the adjusted $R^2$ statistic. I also looked at the coefplot (Fig. 1), which plots each coefficient and it's standard error (as well as twice the standard error). This is also our 95% Confidence Interval for each coefficient. This allows us to remove coefficients from the model which don't appear to have an effect on the crime rate.
+
+```{r echo=FALSE}
+crimedata.lm.full <- lm(Crime ~ popn + metro + popdens + pov + education + spending, data = crimedata)
+coefplot(crimedata.lm.full, col.pts = "red", main = "Fig. 1 - Regression Coefficient Estimates and C.I.\'s")
+```
+
+We can view the $R^2$ statistic using display()
+```{r}
+display(crimedata.lm.full)
+```
+***
+Discrete Dataset (inspol)
+-

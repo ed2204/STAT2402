@@ -1,0 +1,244 @@
+```{r echo=FALSE, message=FALSE}
+library(ggplot2)
+theme_set(theme_bw())
+library(reshape2)
+library(grid)
+library(gridExtra)
+```
+STAT2402 Regression Modelling: Term 1 Coursework
+=
+Edward Strang
+-
+***
+
+### Data
+
+___crimedata___, from the Statistical Abstract of the US: data from the United States census, 1993 of 51 states of the US, with variables:
+* __Crime__ (continuous variable, total crimes in 1993 per state (per 100,000 people))
+* __popn__ (continuous variable, population in state (in thousands))
+* __pov__ (continuous variable, % of population in state below the poverty level in 1993)
+* __metro__ (continuous variable, metropolitan population (% of state pop'n))
+* __popdens__ (continuous variable, population density per square mile)
+* __education__ (continuous variable, number of public high school graduates (in tens of thousands))
+* __spending__ (continuous variable, state expenditure to Dept. of Corrections (in millions of dollars)).
+ 
+___inspol___, from the Sentient Machine Research company: from real world business data, information on 2030 customers, and which insurance products they hold. There are 86 variables, of which 11 are being used (one dependent, 10 predictor):
+* __avgage__ (discrete variable, 6 levels: 20-30yrs, 30-40yrs, 40-50yrs, 50-60yrs, 60-70yrs & 70-80yrs)
+* __highed__, __mided__ & __lowed__ (binary variables, high, middle and low level education respectively)
+* __inclt30k__, __inc30to45k__, __inc45to75k__, __inc75to122k__, __incmt123k__ (binary variables, Income <$30k, $30-45k, $45-75k, $75-122k, >$123k respectively)
+* __contlifeins__ (discrete variable, Contribution to life insurance policy (per annum), 9 levels: 0, $1-49, $50-99, $100-199, $200-499, $500-999, $1000-4999, $5000-9999, $10000-19999, >$20000)
+* __lifeinspols__ (discrete variable, number of life insurance policies (1-6))
+
+***
+
+### Task 1
+
+___crimedata dataset___
+
+The ___crimedata___ dataset details the crime levels for various states in the United States of America. It gives us details of relevant predictors that could affect the crime level, such as poverty, where we might suggest that poorer people are more likely to commit crimes. However, assuming the dataset includes data on all crimes, it could be that white-collar crime is more common. Also included in the dataset are the metropolitan population and population per square mile, which could have a negative influence on the crime rate, as we normally relate more crimes in cities than we do in rural areas.
+
+In this dataset, the population per square mile may be superfluous, as we would expect a higher population density in metropolitan areas, such as cities, which could mean that there is collinearity between these two variables. The dataset also gives us the number of high school graduates per state, which could show an interesting link between education and crime, which would be expected, as it would be expected for people who had an education would have a job, preventing a need for crime. The final predictor variable in the dataset is the expenditure by the state on the department of corrections. This could show a correlation between crime and the amount spent on stopping and dealing with it, however with this variable there may also be external influences, such as a larger state spending more on crime. However, if there are small states that are also spending large amounts of money on crime, there could be cause to try and correlate the two.
+
+With this data, we are interested in the factors that cause crime, and about finding relationships between the predictors and the crime rate. After running regression modeling on this data, we should be able to predict the effect some, or all, of these variables have on the crime rate, if any. This would be useful to the government or police in determining how to reduce crime in a country, or to physically change one of these variables and be able to predict the outcome. For example, if the government wanted to spend less on crime and policing, they would be able to see what effect this would have on the crime rate.
+
+
+
+___inspol dataset___
+
+The ___inspol___ data contains information on insurance policy holders, obtained from real world business data. The data has 86 variables on each customer, covering socio-economic status and insurance policies held, from life insurance policies to car, van and tractor policies. The socio-economic variables include age category, education level and income category, of which I have selected as the predictor variables for the regression analysis. I have also chosen to use two insurance policy variables, contribution to a life insurance policy (per annum) and number of life insurance policies held per customer. I have chosen this selection of variables as it allows us to apply regression to see if there is relation between the predictor variables age, education, and income to either number of life insurance policies or amount spent on life insurance policies. This could be useful to insurance companies to optimize expense on marketing for example, as they would be able to effectively determine the best target market for their products. Interestingly, in the dataset, the income and education variables are based on an average at the customer's zipcode, meaning that, for example, in the first customer's zipcode, there is an average of 2 people under $30k, 5 between $45k and $75k, and 2 between $75k and $122k.
+
+For the variables I have selected, the first is __age__, a 6-level factor, with levels of age categories. The variable is coded: _20-30yrs, 30-40yrs, 40-50yrs, 50-60yrs, 60-70yrs & 70-80yrs_. The next few variables are the education level attained. These are made up of three binary variables. The final predictor variables are the income level of each customer, which is made up of 5 individual binary variables. In this case, the dependent variable ($Y_i$) is the amount spent per customer on insurance policies.
+
+***
+
+### Task 2
+
+___crimedata dataset___
+
+```{r }
+crimedata <- read.csv("Coursework/crimedata.csv")
+
+head(crimedata)
+```
+The ___education___ variable is measured in tens of thousands of people, rather than a percentage compared to the other  variables. We could convert this to a percentage using the ___popn___ variable:
+
+1.First convert education to thousands, rather than tens of thousands:
+```{r}
+crimedata$education <- crimedata$education*100
+```
+2.Then convert to a percentage:
+```{r}
+crimedata$education <- crimedata$education/crimedata$popn * 100
+```
+Viewing a summary of the modified variable:
+```{r}
+summary(crimedata$education)
+```
+We see that interestingly, there are some >100 percentages, meaning more high school graduates than the population. This could come from a number of influences, such as under 18's/under 16's not being recorded in the census, or people moving state but not recording this in the census. As the graduate figure is probably obtained from schools, then this could cause this anomaly.
+
+We could also create a spending per person variable, but this could also fall into problems from the above cause, and as the spending for policing would not used on every person, then this would probably be inappropriate. However, it would be sensible to take logs of spending, as there are many low spending values, and few higher, as shown in fig(1) below.
+```{r echo = FALSE}
+qplot(crimedata$spending, xlab = "Amount Spent on Dept. of Corrections, Millions of $", ylab = "Frequency", main = "Figure (1) - Histogram of Spending", cex.sub = 0.8, binwidth = 500) + geom_histogram(binwidth = 500, col = "black", fill = "white")
+```
+If we take logs of this value, it centres the distribution. It also makes the data appear normal when we look at the histogram (fig(2))
+```{r}
+crimedata$spending <- log(crimedata$spending)
+```
+```{r echo=FALSE}
+qplot(crimedata$spending, xlab = "Log of Amount Spent on Dept. of Corrections, Millions of $", ylab = "Frequency", main = "Figure (2) - Histogram of the log of Spending", cex.sub = 0.8, binwidth = 1) + geom_histogram(binwidth = 1, col = "black", fill = "white")
+```
+
+The same effect is seen in the population density variable, so we will take logs of this variable as well
+```{r}
+crimedata$popdens <- log(crimedata$popdens)
+```
+
+We could also think about mean centring the predictor variables. I have decided to _only_ mean centre the population density, as the other variables become unclear when mean centred (as they are percentages).
+```{r}
+crimedata$popdens <- crimedata$popdens-mean(crimedata$popdens)
+```
+
+
+
+___inspol dataset___
+
+```{r}
+inspol_temp <- read.csv("Coursework/inspol.csv")
+```
+
+First thing is to extract the variables with which we are interested:
+```{r}
+inspol <- data.frame(inspol_temp[4], inspol_temp[18], inspol_temp[17], inspol_temp[16], inspol_temp[37], inspol_temp[38], inspol_temp[39], inspol_temp[40], inspol_temp[41], inspol_temp[55], inspol_temp[76])
+names(inspol) <- c("avg.age", "ed.low", "ed.med", "ed.high", "inc.lt30k", "inc.30to45k", "inc.45to75k", "inc.75to122k", "inc.mt123k", "lifeins.amountspent", "lifeins.policiesheld")
+```
+
+We also need to factorise the variables, for proper analysis in R (we label the levels in the age and amount spent variables).
+
+```{r}
+inspol$avg.age <- factor(inspol$avg.age, labels = c("20-30 Years","30-40 Years","40-50 Years","50-60 Years","60-70 Years","70-80 Years"))
+inspol$ed.low <- factor(inspol$ed.low)
+inspol$ed.med <- factor(inspol$ed.med)
+inspol$ed.high <- factor(inspol$ed.high)
+inspol$inc.lt30k <- factor(inspol$inc.lt30k)
+inspol$inc.30to45k <- factor(inspol$inc.30to45k)
+inspol$inc.45to75k <- factor(inspol$inc.45to75k)
+inspol$inc.75to122k <- factor(inspol$inc.75to122k)
+inspol$inc.mt123k <- factor(inspol$inc.mt123k)
+inspol$lifeins.amountspent <- factor(inspol$lifeins.amountspent, labels = c("$0","$0-$49","$50-$99","$100-$199","$200-$499","$500-$999","$1000-$4999","$5000-$9999","$10000-19999",">$20000"))
+inspol$lifeins.policiesheld <- factor(inspol$lifeins.policiesheld)
+```
+
+Which gives us a dataset (first 6 responses):
+```{r}
+head(inspol)
+```
+
+***
+
+### Task 3
+
+___crimedata dataset___
+
+To get a general overview of our dataset, we can use a pairs plot (fig(3)), which plots all the variables in our dataset against each other in scatterplots. These plots don't give us a definite idea of influence between variables, but lets us look at them closer to see if there is a link.
+
+```{r echo=FALSE}
+pairs(crimedata, labels = c("Crime Rate", "Population", "Poverty", "Metropolitan", "Pop'n Density (MC)", "Graduates", "Log of Spending"))
+title(sub = "Figure (3) - 'Pairs' Scatterplot Matrix of crimedata dataset", cex.sub = 0.8)
+```
+
+This highlights both some obvious, and some interesting, links between variables. For example, an obvious link in the plot is the relationship between population density and metropolitan areas (shown in fig(4)), where there is strong correlation. We can use pearson's correlation coefficient to tell us how well the data correlates.
+
+$$r_{jk}=\frac{1}{n}\sum_{i=1}^{n}\frac{(x_i-\bar{x})(y_i-\bar{y})}{s_xs_y}$$
+
+For population density and metropolitan areas, this coefficient is `r cor(crimedata$popdens, crimedata$metro)`
+
+```{r echo = FALSE}
+qplot(crimedata$metro, crimedata$popdens, ylab = "Mean Centered Population Density (per Square Mile)", xlab = "% Metropolitan Population in State", main="Figure (4) - Metropolitan Population vs Population Density") + geom_smooth(method = "lm", se = FALSE)
+```
+
+You can see that on the above plot I have also added a line that best fits the points, to demonstrate the influence between the two variables. As the two variables appear to be quite similar, they could have the same effect on crime, which would suggest multicollinearity.
+
+Another variable we could look at is spending, as it has some interesting effects to other variables. For example, in fig(5), we can see that it has fairly strong correlation with education (`r cor(crimedata$spending, crimedata$education)`), metropolitan areas/population density (as the plots for these two are quite similar, we only see one in fig(5) for clarity), which both have correlation coefficients `r cor(crimedata$spending, crimedata$metro)` and `r cor(crimedata$spending, crimedata$popdens)` respectively. We could also include the crime rate, but we have to note that the crime rate is a number, and the __education__ and __metro__ variables are percentages.
+
+```{r echo=FALSE, fig.width=10}
+
+tmpgraph <- crimedata[,c(4,6,7)]
+tp <- melt(tmpgraph, id=c("spending"))
+ggplot(tp, aes(spending)) + geom_point(aes(x=spending, y=value, colour=variable, pch = variable)) + geom_smooth(aes(x=spending, y=value, colour=variable), method = "lm") + scale_colour_discrete(name = "", breaks=c("metro", "education"), labels=c("Metropolian Population (%)", "High School Graduates (%)")) + scale_shape_discrete(name = "", breaks=c("metro", "education"), labels=c("Metropolian Population (%)", "High School Graduates (%)")) + xlab("Spending on Dept. of Corrections (Millions of $)") + ylab("Other Variables (% of Population)") + ggtitle("Figure(5) - Scatterplot of Spending vs Metropolitan Popn and Education")
+
+```
+
+This figure seems to suggest that spending is greater when there's a high metropolitan population, but interestingly, there are less high school graduates in states where there is greater spending on the department of corrections. This could mean that the more educated a state, the less needs to be spent on corrections, which includes money spent on offenders, as well as policing etc. The scatterplot suggests an interaction between the two, as we would expect random data if there were no correlation between the two.
+
+Finally, we can also look at the connection between crime and spending. We would expect that in states that have a higher crime rate, there would be more spent on rehabilitation and prisons, therefore the amount spent on the department of corrections would be higher. We see some link between the two in figure (6), but there doesn't appear to be a very strong correlation between the two. However, the correlation coefficient is `r cor(crimedata$Crime, crimedata$spending)`, suggesting that there is still _some_ link between the two variables.
+
+```{r echo=FALSE}
+qplot(crimedata$Crime, crimedata$spending, ylab = "Spending on Dept. of Corrections ($ Millions)", xlab = "Crime Rate (Thousands)", main="Figure (6) - Scatterplot of Crime Rate vs Spending") + geom_smooth(method = "lm", se = FALSE, col = "red")
+```
+
+In the above plot, we also see an interesting data point off to the right - it appears to be anomolous, as it isn't near any other datapoint, and could be considered an outlier or leverage point in our regression model. This will be something to keep in mind whilst applying regression models to the data. A regression model will help give us a better indication of the underlying relationship between the variables, and could, as said above, help governments reduce crime rate. However, we do need to keep in mind that this dataset only has seven variables, and there could be variables not in the dataset that are influencing the crime rate. Therefore, we need to be careful when using the regression model that we fit that it is accurate. 
+
+
+
+___inspol dataset___
+
+The abstract of the dataset we have taken consists completely of discrete variables, as we can see from looking at the summary. We notice that in the summary, some variables have (other) as levels, although there are only a discrete number of levels for each variable.
+
+```{r}
+summary(inspol)
+```
+
+For both the education levels and income levels, we can look at the general distribution of these variables through bar charts. In figure (7), we have looked in detail at the education levels.
+
+```{r echo=FALSE}
+grid.arrange(
+qplot(inspol$ed.low, ylim=c(0,1500)) + geom_bar(fill = "#56B4E9") + ylab("Count") + xlab("Average Low Education Households in Zipcode")
+,qplot(inspol$ed.med, ylim=c(0,1500)) + geom_bar(fill = "#009E73") + ylab("Count") + xlab("Average Medium Education Households in Zipcode")
+,qplot(inspol$ed.high, ylim=c(0,1500)) + geom_bar(fill = "#0072B2") + ylab("Count") + xlab("Average High Education Households in Zipcode")
+,main="Figure (7) - Bar Charts of Education levels in each customer's zipcode")
+```
+
+We can see from these bar charts that for the sample that we have, there appears to be a greater number of medium income households. This could suggest that the dataset is biased towards this kind of customer, or that people with lower education backgrounds are less likely to hold insurance products. There are also less high education averages, which could either be that higher education is harder to obtain, or that of the customers surveyed, less higher education customers were surveyed than other levels of education. However, interestingly, there appears to be no customer with no average high education level in their neighbourhood. This could be a strong indicator towards bias in the dataset.
+
+We could also consider if there is a link between education and spending on life insurance policies. A good way to do this is to look at the plots for each education level inside spending, as done in figure (8). We have removed the $0 level, as there are over 4 or 5 times as many responses for that level, meaning we can't see the data in the other levels!
+
+```{r echo=FALSE, fig.width=12}
+# Drop the $0 spending level (it's many orders of magnitude above the others)
+ss <- droplevels(subset(inspol, lifeins.amountspent %in% c("$0-$49", "$50-$99", "$100-$199", "$200-$499", "$500-$999", "$1000-$4999", "$5000-$9999", "$10000-19999")))
+
+# Group levels of data together (Makes reading the bar chart easier)
+levels(ss$ed.low) <- c("0","1-3","1-3","1-3","4-6","4-6","4-6","7-9","7-9","7-9")
+levels(ss$ed.med) <- c("0","1-3","1-3","1-3","4-6","4-6","4-6","7-9","7-9","7-9")
+levels(ss$ed.high) <- c("0","1-3","1-3","1-3","4-6","4-6","4-6","7-9","7-9","7-9")
+
+grid.arrange(qplot(ss$lifeins.amountspent, fill=ss$ed.low) + geom_bar() + xlab("Amount Spent on Life Insurance ($ p.a.)") + ylab("Count") + scale_fill_discrete(name = "Average Low Education Level", breaks=c("0", "1-3", "4-6","7-9"), labels=c("0 Households", "1-3 Households", "4-6 Households", "7-9 Households")),
+             qplot(ss$lifeins.amountspent, fill=ss$ed.med) + geom_bar() + xlab("Amount Spent on Life Insurance ($ p.a.)") + ylab("Count") + scale_fill_discrete(name = "Average Medium Education Level", breaks=c("0", "1-3", "4-6","7-9"), labels=c("0 Households", "1-3 Households", "4-6 Households", "7-9 Households")),
+             qplot(ss$lifeins.amountspent, fill=ss$ed.high) + geom_bar() + xlab("Amount Spent on Life Insurance ($ p.a.)") + ylab("Count") + scale_fill_discrete(name = "Average High Education Level", breaks=c("0", "1-3", "4-6","7-9"), labels=c("0 Households", "1-3 Households", "4-6 Households", "7-9 Households")),
+             sub= "Figure (8) - Bar Charts of Spending with regards to Education Levels")
+```
+
+Interestingly, this figure is suggesting that there are more people in lower education levels spending money on life insurance policies than people in higher education levels. This could be because there are more people in lower education levels, as seen in figure (7), or maybe that people in higher education levels are smarter in where they spend their money. This would be something to keep in mind when applying regression, as the lack of people in higher education levels could skew the data. Finally, it would be good to get an idea of the ages of customers in the dataset (figure (9)).
+
+```{r echo=FALSE}
+grid.arrange(qplot(inspol$avg.age) + geom_bar(fill = "#56B4E9") + xlab("Average age range in customer zipcode") + ylab("Count"),sub="Figure (9) - Bar Chart of Average Age Ranges in the dataset")
+```
+
+We do need to keep in mind that these variables are obtained from average data for the customer's zipcode, and not the actual customer's age (etc.), although it is indicative of the customer's age. The above figure shows that the most customers were in the 40-50yr bracket, with the general trend of age between 30 and 60 years. There are however a few customers outside this range. This is perhaps what we would expect, as the lower ages (20-30yrs) could be considered to not be as interested in life insurance, and the older brackets (70-80yrs) tend to find life insurance harder to obtain, due to medical reasons. This could be helpful to insurance companies interested in broadening their customer base, to younger age brackets, or to help them focus on the high-selling categories. A regression model _does_ need to be applied to the data to get a better idea of the underlying trend between education, income, age and life insurance.
+
+***
+
+### Bibliography
+  
+_crimedata_ dataset:
+
+Data: U.S. Federal Bureau of Investigation, _Crime in the United States_
+      U.S. National Center for Education Studies, _Digest of Education Statistics_
+      __via__ Statistical Abstract of the United States Census, 1993 & 1995
+      http://www.census.gov/prod/www/abs/statab1995_2000.html
+      
+_lifeins_ dataset:
+
+Abstract of P. van der Putten and M. van Someren (eds). CoIL Challenge 2000: The Insurance Company Case.
+Published by Sentient Machine Research, Amsterdam.
+Also a Leiden Institute of Advanced Computer Science Technical Report 2000-09. June 22, 2000.
+      
