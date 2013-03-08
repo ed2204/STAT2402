@@ -9,7 +9,7 @@ library(ggplot2)
 theme_set(theme_bw())
 
 # Load up datasets
-crimedata <- read.csv("crimedata.csv", header = TRUE, row.names = 1)
+crimedata <- read.csv("crimedata.csv", header = TRUE, row.names = 8)
 inspol <- read.csv("inspol.trunc.csv", header = TRUE)
 
 # Run all relevant data manipulation (From Term 1 Coursework)
