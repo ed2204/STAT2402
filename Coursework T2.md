@@ -12,13 +12,13 @@ The continuous dataset used was the #crimedata# dataset, an abstract of the 1993
 
 
 ```
-  Crime  popn  pov metro   popdens education spending
-1  4879  4181 17.4  67.4  0.004134     86.10    5.204
-2  5568   598  9.1  41.8 -4.313354     93.65    4.905
-3  7432  3945 15.4  84.7 -0.864811     77.82    5.844
-4  4811  2426 20.0  44.7 -0.567064    104.70    4.779
-5  6457 31217 18.2  96.7  0.890153     83.29    8.023
-6  5527  3564  9.9  81.8 -0.870608     89.23    5.583
+           Crime  popn  pov metro   popdens education spending
+Alabama     4879  4181 17.4  67.4  0.004134     86.10    5.204
+Alaska      5568   598  9.1  41.8 -4.313354     93.65    4.905
+Arizona     7432  3945 15.4  84.7 -0.864811     77.82    5.844
+Arkansas    4811  2426 20.0  44.7 -0.567064    104.70    4.779
+California  6457 31217 18.2  96.7  0.890153     83.29    8.023
+Colorado    5527  3564  9.9  81.8 -0.870608     89.23    5.583
 ```
 
 
@@ -99,7 +99,7 @@ I have looked at including interaction terms, smooth terms or power terms, but t
 ![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7.png) 
 
 
-Looking at the model we have fitted, we see some interesting results, interpreted in more detail later on in this report. We first want to check that the assumptions used in fitting this model are correct. In fitting the model, we have assumed that the errors are 
+Looking at the model we have fitted, we see some interesting results, interpreted in more detail later on in this report. We first want to check that the assumptions used in fitting this model are correct. In fitting the model, we have assumed that the errors are independent, $\epsilon_i$~$N(0,\sigma^2)$
 
 
 ![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8.png) 

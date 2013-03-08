@@ -88,13 +88,32 @@ crimedata.lm3 <- lm(Crime ~ metro + popdens + pov + education, data = crimedata)
 coefplot(crimedata.lm3, col.pts = "red", main = "Fig. 1.3 - Regression Coefficient Estimates and C.I.\'s")
 ```
 
-Looking at the model we have fitted, we see some interesting results, interpreted in more detail later on in this report. We first want to check that the assumptions used in fitting this model are correct. In fitting the model, we have assumed that the errors are 
+Looking at the model we have fitted, we see some interesting results, interpreted in more detail later on in this report. We first want to check that the assumptions used in fitting this model are correct. In fitting the model, we have assumed that the errors are independent, $\epsilon_i$ ~ $Normal(0,\sigma^2)$, with constant variance. We can check the errors are normal by comparing them on a Normal Q-Q plot (Fig. 1.4). We are looking for the points to roughly follow the line. We can see that in this case, they do seem to follow the line, although there is a slight increase in the middle of the residuals. We can also see the residual for 'Washington D.C.' is quite far from the line. This is because the crime rate the model predicts for Washington D.C. is a lot lower than the actual crime rate. This could be due to the fact this state is the capitol of the US.
+
+
 
 
 ```{r echo = FALSE}
-plot(crimedata.lm2, which = 2, main = "Fig 1.4 - Normal Q-Q Plot of Residuals")
+plot(crimedata.lm1, which = 2, main = "Fig 1.4 - Normal Q-Q Plot of Residuals", caption = NULL)
 ```
 
 ***
 Discrete Dataset (inspol)
 -
+
+***
+
+### Bibliography
+  
+_crimedata_ dataset:
+
+Data: U.S. Federal Bureau of Investigation, _Crime in the United States_
+      U.S. National Center for Education Studies, _Digest of Education Statistics_
+      __via__ Statistical Abstract of the United States Census, 1993 & 1995
+      http://www.census.gov/prod/www/abs/statab1995_2000.html
+      
+_lifeins_ dataset:
+
+Abstract of P. van der Putten and M. van Someren (eds). CoIL Challenge 2000: The Insurance Company Case.
+Published by Sentient Machine Research, Amsterdam.
+Also a Leiden Institute of Advanced Computer Science Technical Report 2000-09. June 22, 2000.
