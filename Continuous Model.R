@@ -1,4 +1,4 @@
-crimedata <- read.csv("~/Coursework/crimedata.csv", row.names = 8)
+crimedata <- read.csv("crimedata.csv", row.names = 8)
 head(crimedata)
 crimedata$education <- crimedata$education * 100
 crimedata$education <- crimedata$education/crimedata$popn * 100
@@ -14,7 +14,7 @@ crimedata.lm1 <- lm(Crime ~ popn + metro + popdens + pov + education + spending,
 crimedata.lm2 <- lm(Crime ~ popn + metro + popdens + pov + education + spending +
                       popn:metro + popn:popdens, data = crimedata)
 # add some interactions
-crimedata.lm3 <- lm(Crime ~ Crime ~ popn + metro + popdens + pov + education + 
+crimedata.lm3 <- lm(Crime ~ popn + metro + popdens + pov + education + 
                       spending + popn:metro + popn:popdens + popn:education, data = crimedata)
 # remove popn (rule of 2)
 crimedata.lm4 <- lm(Crime ~ metro + popdens + pov + education + spending, data = crimedata)
@@ -39,6 +39,8 @@ par(mfrow = c(2,2))
 plot(crimedata.lm6)
 
 AIC(crimedata.lm6)
+
+AIC(crimedata.lm1, crimedata.lm2, crimedata.lm3, crimedata.lm4, crimedata.lm5, crimedata.lm6, crimedata.lm7)
 
 # Record number 9 is Washington DC
 
